@@ -40,10 +40,10 @@ public class FeatureVectorScoringSearchScript extends AbstractSearchScript {
     // version of feature vector, if it isn't null, it should match version of index
     private String version;
 
-    // final_score = baseConstant + factorConstant * cos(Vp, Vi)
+    // final_score = baseConstant + factorConstant * cos(X, Y)
     private double baseConstant;
 
-    // final_score = baseConstant + factorConstant * cos(Vp, Vi)
+    // final_score = baseConstant + factorConstant * cos(X, Y)
     private double factorConstant;
 
     // input feature vector
@@ -68,27 +68,27 @@ public class FeatureVectorScoringSearchScript extends AbstractSearchScript {
 
     private FeatureVectorScoringSearchScript(Map<String, Object> params) throws ScriptException {
         this.field = (String) params.get("field");
-        String inputFeatureVector = (String) params.get("inputFeatureVector");
-        if (this.field == null || inputFeatureVector == null || inputFeatureVector.trim().length() == 0) {
+        String inputFeatureVectorStr = (String) params.get("inputFeatureVector");
+        if (this.field == null || inputFeatureVectorStr == null || inputFeatureVectorStr.trim().length() == 0) {
             throw new ScriptException("Initialize script " + SCRIPT_NAME + " failed!");
         }
 
         this.version = (String) params.get("version");
-        this.baseConstant = params.get("baseConstant") != null ? (Double) params.get("baseConstant") : DEFAULT_BASE_CONSTANT;
-        this.factorConstant = params.get("factorConstant") != null ? (Double) params.get("factorConstant") : DEFAULT_FACTOR_CONSTANT;
+        this.baseConstant = params.get("baseConstant") != null ? Double.parseDouble(params.get("baseConstant").toString()) : DEFAULT_BASE_CONSTANT;
+        this.factorConstant = params.get("factorConstant") != null ? Double.parseDouble(params.get("factorConstant").toString()) : DEFAULT_FACTOR_CONSTANT;
 
-        String[] inputFeatureVectorArr = inputFeatureVector.split(",");
+        String[] inputFeatureVectorArr = inputFeatureVectorStr.split(",");
         int dimension = inputFeatureVectorArr.length;
-        double inputFeatureVectorSum = 0.0D;
+        double sumOfSquare = 0.0D;
         this.inputFeatureVector = new double[dimension];
         double temp;
         for (int index = 0; index < dimension; index++) {
             temp = Double.parseDouble(inputFeatureVectorArr[index].trim());
             this.inputFeatureVector[index] = temp;
-            inputFeatureVectorSum += temp * temp;
+            sumOfSquare += temp * temp;
         }
 
-        this.inputFeatureVectorNorm = Math.sqrt(inputFeatureVectorSum);
+        this.inputFeatureVectorNorm = Math.sqrt(sumOfSquare);
         LOGGER.debug("FeatureVectorScoringSearchScript.init, version:{}, norm:{}, baseConstant:{}, factorConstant:{}."
                 , this.version, this.inputFeatureVectorNorm, this.baseConstant, this.factorConstant);
     }
@@ -104,13 +104,18 @@ public class FeatureVectorScoringSearchScript extends AbstractSearchScript {
             return this.baseConstant;
         }
 
-        String docFeatureVector = ((ScriptDocValues.Strings) doc().get(this.field)).getValue();
-        return calculateScore(docFeatureVector);
+        String docFeatureVectorStr = ((ScriptDocValues.Strings) doc().get(this.field)).getValue();
+        return calculateScore(docFeatureVectorStr);
     }
 
-    public double calculateScore(String docFeatureVector) {
+    public double calculateScore(String docFeatureVectorStr) {
         // 1. check docFeatureVector
-        if (docFeatureVector == null || docFeatureVector.trim().isEmpty()) {
+        if (docFeatureVectorStr == null) {
+            return this.baseConstant;
+        }
+
+        docFeatureVectorStr = docFeatureVectorStr.trim();
+        if (docFeatureVectorStr.isEmpty()) {
             return this.baseConstant;
         }
 
@@ -118,13 +123,13 @@ public class FeatureVectorScoringSearchScript extends AbstractSearchScript {
         String[] docFeatureVectorArr;
         if (this.version != null) {
             String versionPrefix = version + "|";
-            if (!docFeatureVector.trim().startsWith(versionPrefix)) {
+            if (!docFeatureVectorStr.startsWith(versionPrefix)) {
                 return this.baseConstant;
             }
 
-            docFeatureVectorArr = docFeatureVector.trim().substring(versionPrefix.length()).split(",");
+            docFeatureVectorArr = docFeatureVectorStr.substring(versionPrefix.length()).split(",");
         } else {
-            docFeatureVectorArr = docFeatureVector.trim().split(",");
+            docFeatureVectorArr = docFeatureVectorStr.split(",");
         }
 
         // 3. check the dimension of input and document
@@ -134,20 +139,20 @@ public class FeatureVectorScoringSearchScript extends AbstractSearchScript {
         }
 
         // 4. calculate the relevance score of the two feature vector
-        double docFeatureVectorSum = 0.0D;
-        double productiveSum = 0.0D;
+        double sumOfSquare = 0.0D;
+        double sumOfProduct = 0.0D;
         double tempValueInDouble;
         for (int i = 0; i < dimension; i++) {
             tempValueInDouble = Double.parseDouble(docFeatureVectorArr[i].trim());
-            productiveSum += tempValueInDouble * this.inputFeatureVector[i];
-            docFeatureVectorSum += tempValueInDouble * tempValueInDouble;
+            sumOfProduct += tempValueInDouble * this.inputFeatureVector[i];
+            sumOfSquare += tempValueInDouble * tempValueInDouble;
         }
 
-        if (docFeatureVectorSum == 0) {
+        if (sumOfSquare == 0) {
             return this.baseConstant;
         }
 
-        double cosScore = productiveSum / (Math.sqrt(docFeatureVectorSum) * inputFeatureVectorNorm);
+        double cosScore = sumOfProduct / (Math.sqrt(sumOfSquare) * inputFeatureVectorNorm);
         return this.baseConstant + this.factorConstant * cosScore;
     }
 }
