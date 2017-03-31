@@ -10,6 +10,12 @@ You can use this plugin to calculate the relevance score of the two feature vect
 3. copy target/releases/elasticsearch-feature-vector-scoring-2.3.4.zip to your elasticsearch plugin directory and unzip it
 4. restart elasticsearch
 
+## Script Parameters
+- **field**: **required**, field in index to store the vector of document;
+- **inputFeatureVector**: **required**,  the condition vector, a string connected with comma;
+- **version**: version of vector, if it isn't null, it should match the version of vector of document(if use version, the field value should start with ‘$VERSION|’, such as '20170331|0.1,2.3,-1.6,0.7,-1.3');
+- **baseConstant** and **factorConstant**: used to calculate the final score, default value are 1. final_score = baseConstant + factorConstant * cos(X, Y)
+
 ## Example
 ### create a test index
 
@@ -193,3 +199,6 @@ and the result is:
         ]
       }
     }
+    
+### A personalized search case details
+see http://ginobefunny.com/post/personalized_search_implemention_based_word2vec_and_elasticsearch/
