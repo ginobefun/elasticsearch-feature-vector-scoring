@@ -7,8 +7,9 @@ You can use this plugin to calculate the relevance score of the two feature vect
 ## Build Plugin from Code
 1. git clone https://github.com/ginobefun/elasticsearch-feature-vector-scoring.git
 2. mvn clean package -DskipTests
-3. copy target/releases/elasticsearch-feature-vector-scoring-2.3.4.zip to your elasticsearch plugin directory and unzip it
-4. restart elasticsearch
+3. create vector scoring plugin dircectoy, such as ${ES_HOME}/plugins/vector-scoring
+4. copy target/releases/elasticsearch-feature-vector-scoring-5.3.0.zip to your plugin directory and unzip it
+5. restart elasticsearch
 
 ## Script Parameters
 - **field**: **required**, field in index to store the vector of document;
@@ -25,12 +26,11 @@ You can use this plugin to calculate the relevance score of the two feature vect
         "product": {
           "properties": {
             "productName": {
-              "type": "string",
+              "type": "text",
               "analyzer": "standard"
             },
             "productFeatureVector": {
-              "type": "string",
-              "index": "not_analyzed"
+              "type": "keyword"
             }
           }
         }
@@ -77,7 +77,7 @@ You can use this plugin to calculate the relevance score of the two feature vect
 the the result is: 
 
     {
-      "took": 2,
+      "took": 8,
       "timed_out": false,
       "_shards": {
         "total": 1,
@@ -86,13 +86,13 @@ the the result is:
       },
       "hits": {
         "total": 3,
-        "max_score": 0.35615897,
+        "max_score": 0.14181954,
         "hits": [
           {
             "_index": "test",
             "_type": "product",
             "_id": "2",
-            "_score": 0.35615897,
+            "_score": 0.14181954,
             "_source": {
               "productName": "Normal brand of shoes",
               "productFeatureVector": "-0.5,1.6,1.1,0.9,0.7"
@@ -102,7 +102,7 @@ the the result is:
             "_index": "test",
             "_type": "product",
             "_id": "1",
-            "_score": 0.3116391,
+            "_score": 0.1273061,
             "_source": {
               "productName": "My favorite brand of shoes",
               "productFeatureVector": "0.1,2.3,-1.6,0.7,-1.3"
@@ -112,7 +112,7 @@ the the result is:
             "_index": "test",
             "_type": "product",
             "_id": "3",
-            "_score": 0.3116391,
+            "_score": 0.1273061,
             "_source": {
               "productName": "The shoes I don't like",
               "productFeatureVector": "1.2,0.1,0.4,-0.2,0.3"
@@ -155,7 +155,7 @@ the the result is:
 and the result is: 
 
     {
-      "took": 5,
+      "took": 35,
       "timed_out": false,
       "_shards": {
         "total": 1,
@@ -164,13 +164,13 @@ and the result is:
       },
       "hits": {
         "total": 3,
-        "max_score": 0.6232782,
+        "max_score": 0.2546122,
         "hits": [
           {
             "_index": "test",
             "_type": "product",
             "_id": "1",
-            "_score": 0.6232782,
+            "_score": 0.2546122,
             "_source": {
               "productName": "My favorite brand of shoes",
               "productFeatureVector": "0.1,2.3,-1.6,0.7,-1.3"
@@ -180,7 +180,7 @@ and the result is:
             "_index": "test",
             "_type": "product",
             "_id": "2",
-            "_score": 0.4336441,
+            "_score": 0.17267346,
             "_source": {
               "productName": "Normal brand of shoes",
               "productFeatureVector": "-0.5,1.6,1.1,0.9,0.7"
@@ -190,7 +190,7 @@ and the result is:
             "_index": "test",
             "_type": "product",
             "_id": "3",
-            "_score": 0.25049925,
+            "_score": 0.10233018,
             "_source": {
               "productName": "The shoes I don't like",
               "productFeatureVector": "1.2,0.1,0.4,-0.2,0.3"

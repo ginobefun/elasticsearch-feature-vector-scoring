@@ -14,22 +14,17 @@
 package com.ginobefunny.elasticsearch.plugins.scoring;
 
 import org.elasticsearch.plugins.Plugin;
-import org.elasticsearch.script.ScriptModule;
+import org.elasticsearch.plugins.ScriptPlugin;
+import org.elasticsearch.script.NativeScriptFactory;
+
+import java.util.Collections;
+import java.util.List;
 
 
-public class FeatureVectorScoringPlugin extends Plugin {
+public class FeatureVectorScoringPlugin extends Plugin implements ScriptPlugin {
 
     @Override
-    public String name() {
-        return "feature-vector-scoring";
-    }
-
-    @Override
-    public String description() {
-        return "ElasticSearch Plugin for Feature Vector Scoring.";
-    }
-
-    public void onModule(ScriptModule module) {
-        module.registerScript(FeatureVectorScoringSearchScript.SCRIPT_NAME, FeatureVectorScoringSearchScript.ScriptFactory.class);
+    public List<NativeScriptFactory> getNativeScripts() {
+        return Collections.singletonList(new FeatureVectorScoringSearchScript.ScriptFactory());
     }
 }

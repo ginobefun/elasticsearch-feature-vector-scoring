@@ -14,8 +14,6 @@
 package com.ginobefunny.elasticsearch.plugins.scoring;
 
 import org.elasticsearch.common.Nullable;
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.index.fielddata.ScriptDocValues;
 import org.elasticsearch.script.AbstractSearchScript;
 import org.elasticsearch.script.ExecutableScript;
@@ -25,8 +23,6 @@ import org.elasticsearch.script.ScriptException;
 import java.util.Map;
 
 public class FeatureVectorScoringSearchScript extends AbstractSearchScript {
-
-    public static final ESLogger LOGGER = Loggers.getLogger("feature-vector-scoring");
 
     public static final String SCRIPT_NAME = "feature_vector_scoring_script";
 
@@ -61,6 +57,11 @@ public class FeatureVectorScoringSearchScript extends AbstractSearchScript {
         }
 
         @Override
+        public String getName() {
+            return SCRIPT_NAME;
+        }
+
+        @Override
         public boolean needsScores() {
             return false;
         }
@@ -70,7 +71,7 @@ public class FeatureVectorScoringSearchScript extends AbstractSearchScript {
         this.field = (String) params.get("field");
         String inputFeatureVectorStr = (String) params.get("inputFeatureVector");
         if (this.field == null || inputFeatureVectorStr == null || inputFeatureVectorStr.trim().length() == 0) {
-            throw new ScriptException("Initialize script " + SCRIPT_NAME + " failed!");
+            return;
         }
 
         this.version = (String) params.get("version");
@@ -89,18 +90,15 @@ public class FeatureVectorScoringSearchScript extends AbstractSearchScript {
         }
 
         this.inputFeatureVectorNorm = Math.sqrt(sumOfSquare);
-        LOGGER.debug("FeatureVectorScoringSearchScript.init, version:{}, norm:{}, baseConstant:{}, factorConstant:{}."
-                , this.version, this.inputFeatureVectorNorm, this.baseConstant, this.factorConstant);
     }
 
     @Override
     public Object run() {
-        if (this.inputFeatureVectorNorm == 0) {
+        if (this.field == null || this.inputFeatureVector == null || this.inputFeatureVectorNorm == 0) {
             return this.baseConstant;
         }
 
         if (!doc().containsKey(this.field) || doc().get(this.field) == null) {
-            LOGGER.error("cannot find field {}.", field);
             return this.baseConstant;
         }
 
